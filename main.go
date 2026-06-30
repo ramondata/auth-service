@@ -7,19 +7,20 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
 )
 
 // App struct (para injeção de dependência)
 type App struct {
-	DB         *sql.DB
-	MasterKey  string
+	DB        *sql.DB
+	MasterKey string
 }
 
 func main() {
 	// Carrega o .env para desenvolvimento local. Em produção, isso não fará nada.
 	_ = godotenv.Load()
+	fmt.Println("Importando variáveis de ambiente")
 
 	// --- Configuração ---
 	port := os.Getenv("PORT")
@@ -39,14 +40,15 @@ func main() {
 
 	// --- Conexão com o Banco ---
 	db, err := connectDB(databaseURL)
+	fmt.Printf("Conectando ao banco de dados em %s\n", databaseURL)
 	if err != nil {
 		log.Fatalf("Não foi possível conectar ao banco de dados: %v", err)
 	}
 	defer db.Close()
 
 	app := &App{
-		DB:         db,
-		MasterKey:  masterKey,
+		DB:        db,
+		MasterKey: masterKey,
 	}
 
 	// --- Rotas da API ---
