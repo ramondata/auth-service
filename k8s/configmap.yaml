@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: auth-v2
+data:
+  PORT: "8001"
+
+  DATABASE_URL: "postgres://authdb:authdb123@authdb.ctcseg44mqj4.us-east-2.rds.amazonaws.com:5432/authdb"
+
+  MASTER_KEY: "admin-secreto-123"
