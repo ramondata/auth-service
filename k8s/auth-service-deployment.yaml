@@ -15,6 +15,29 @@ spec:
       labels:
         app: auth-service
     spec:
+      priorityClassName: priority-class-auth-service
+      tolerations:
+        - key: app
+          operator: Equal
+          value: auth-service
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: auth-service
+
+              topologyKey: kubernetes.io/hostname
+
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - auth-service
       containers:
       - name: auth-service
         image: docker.io/library/auth-service:latest
