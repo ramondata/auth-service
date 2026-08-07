@@ -15,7 +15,11 @@ func TestValidateKeyHandlerMissingAuthorization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("failed to close database: %v", err)
+		}
+	}()
 
 	app := &App{DB: db}
 
@@ -38,7 +42,11 @@ func TestValidateKeyHandlerInvalidKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("failed to close database: %v", err)
+		}
+	}()
 
 	app := &App{DB: db}
 
@@ -74,7 +82,11 @@ func TestValidateKeyHandlerValidKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("failed to close database: %v", err)
+		}
+	}()
 
 	app := &App{DB: db}
 
