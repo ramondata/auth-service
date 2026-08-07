@@ -11,10 +11,11 @@ import (
 )
 
 func TestValidateKeyHandlerMissingAuthorization(t *testing.T) {
-	db, _, err := sqlmock.New()
+	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
+	mock.ExpectClose()
 	defer func() {
 		if err := db.Close(); err != nil {
 			t.Fatalf("failed to close database: %v", err)
@@ -42,6 +43,7 @@ func TestValidateKeyHandlerInvalidKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
+	mock.ExpectClose()
 	defer func() {
 		if err := db.Close(); err != nil {
 			t.Fatalf("failed to close database: %v", err)
@@ -82,6 +84,7 @@ func TestValidateKeyHandlerValidKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
+	mock.ExpectClose()
 	defer func() {
 		if err := db.Close(); err != nil {
 			t.Fatalf("failed to close database: %v", err)
