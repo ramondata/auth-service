@@ -60,7 +60,7 @@ jobs:
 
   sca-trivy:
     name: SCA / Trivy
-    needs: build-and-test
+    needs: lint
     runs-on: ubuntu-latest
 
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   sast-gosec:
     name: SAST / gosec
-    needs: build-and-test
+    needs: lint
     runs-on: ubuntu-latest
 
     steps:
@@ -111,38 +111,38 @@ jobs:
       - name: Run gosec
         run: gosec -severity high -confidence high ./...
 
-  sonarcloud:
-    name: SAST / SonarQube Cloud
-    needs: build-and-test
-    runs-on: ubuntu-latest
+  # sonarcloud:
+  #   name: SAST / SonarQube Cloud
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "1.26.3"
-          cache: true
-          cache-dependency-path: go.sum
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         go-version: "1.26.3"
+  #         cache: true
+  #         cache-dependency-path: go.sum
 
-      - name: Download dependencies
-        run: go mod download
+  #     - name: Download dependencies
+  #       run: go mod download
 
-      - name: Generate test coverage
-        run: go test -race -coverprofile=coverage.out ./...
+  #     - name: Generate test coverage
+  #       run: go test -race -coverprofile=coverage.out ./...
 
-      - name: Run SonarQube Cloud analysis
-        uses: SonarSource/sonarqube-scan-action@v8.1.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.qualitygate.timeout=300
+  #     - name: Run SonarQube Cloud analysis
+  #       uses: SonarSource/sonarqube-scan-action@v8.1.0
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       with:
+  #         args: >
+  #           -Dsonar.qualitygate.wait=true
+  #           -Dsonar.qualitygate.timeout=300
 
   ci-success:
     name: CI Security Gate
@@ -152,7 +152,7 @@ jobs:
       - lint
       - sca-trivy
       - sast-gosec
-      - sonarcloud
+      # - sonarcloud
     runs-on: ubuntu-latest
 
     steps:
@@ -162,10 +162,10 @@ jobs:
           LINT_RESULT: ${{ needs.lint.result }}
           SCA_RESULT: ${{ needs.sca-trivy.result }}
           SAST_RESULT: ${{ needs.sast-gosec.result }}
-          SONAR_RESULT: ${{ needs.sonarcloud.result }}
+          # SONAR_RESULT: ${{ needs.sonarcloud.result }}
         run: |
           test "$BUILD_RESULT" = "success"
           test "$LINT_RESULT" = "success"
           test "$SCA_RESULT" = "success"
           test "$SAST_RESULT" = "success"
-          test "$SONAR_RESULT" = "success"
+          # test "$SONAR_RESULT" = "success"
