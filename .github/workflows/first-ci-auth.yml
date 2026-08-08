@@ -107,6 +107,12 @@ jobs:
 
       - name: Install gosec
         run: go install github.com/securego/gosec/v2/cmd/gosec@v2.25.0
+      
+      - name: Show gosec version
+        run: gosec -version
+
+      - name: Gosec full report
+        run: gosec -no-fail ./...
 
       - name: Run gosec
         run: gosec -severity high -confidence high ./...
