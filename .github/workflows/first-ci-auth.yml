@@ -23,12 +23,13 @@ jobs:
         with:
           go-version: "1.26.3"
           cache: true
+          cache-dependency-path: go.sum
 
       - name: Download dependencies
         run: go mod download
 
-      - name: Run tests
-        run: go test ./...
+      - name: Run tests with coverage
+        run: go test -race -coverprofile=coverage.out ./...
 
       - name: Build
         run: go build ./...
@@ -47,6 +48,7 @@ jobs:
         with:
           go-version: "1.26.3"
           cache: true
+          cache-dependency-path: go.sum
 
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
@@ -55,3 +57,115 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.11
+
+  sca-trivy:
+    name: SCA / Trivy
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          version: v0.70.0
+          cache: true
+
+      - name: Trivy full vulnerability report
+        run: |
+          trivy fs \
+            --scanners vuln \
+            --severity LOW,MEDIUM,HIGH,CRITICAL \
+            --exit-code 0 \
+            .
+
+      - name: Trivy critical vulnerability quality gate
+        run: |
+          trivy fs \
+            --scanners vuln \
+            --severity CRITICAL \
+            --exit-code 1 \
+            .
+
+  sast-gosec:
+    name: SAST / gosec
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.3"
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.25.0
+
+      - name: Run gosec
+        run: gosec -severity high -confidence high ./...
+
+  sonarcloud:
+    name: SAST / SonarQube Cloud
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.3"
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Generate test coverage
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Run SonarQube Cloud analysis
+        uses: SonarSource/sonarqube-scan-action@v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
+
+  ci-success:
+    name: CI Security Gate
+    if: ${{ always() }}
+    needs:
+      - build-and-test
+      - lint
+      - sca-trivy
+      - sast-gosec
+      - sonarcloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify all required jobs
+        env:
+          BUILD_RESULT: ${{ needs.build-and-test.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          SCA_RESULT: ${{ needs.sca-trivy.result }}
+          SAST_RESULT: ${{ needs.sast-gosec.result }}
+          SONAR_RESULT: ${{ needs.sonarcloud.result }}
+        run: |
+          test "$BUILD_RESULT" = "success"
+          test "$LINT_RESULT" = "success"
+          test "$SCA_RESULT" = "success"
+          test "$SAST_RESULT" = "success"
+          test "$SONAR_RESULT" = "success"
