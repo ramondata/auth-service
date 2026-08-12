@@ -175,3 +175,100 @@ jobs:
           test "$SCA_RESULT" = "success"
           test "$SAST_RESULT" = "success"
           # test "$SONAR_RESULT" = "success"
+
+  docker-build-push:
+    name: Docker Build / Scan / Push ECR
+    needs:
+      - ci-success
+
+    # Imagem só é publicada quando houver push na branch.
+    # Pull Requests executam CI/Security, mas não publicam imagem.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/aws-cloud-k8s'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      APP_VERSION: ${{ vars.APP_VERSION }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      - name: Generate Docker image tag
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          IMAGE_TAG="${APP_VERSION}-${SHORT_SHA}"
+
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
+
+          echo "Generated image tag: $IMAGE_TAG"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "auth-service:${IMAGE_TAG}" \
+            .
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          version: v0.70.0
+          cache: true
+
+      - name: Trivy container vulnerability report
+        run: |
+          trivy image \
+            --scanners vuln \
+            --severity LOW,MEDIUM,HIGH,CRITICAL \
+            --exit-code 0 \
+            "auth-service:${IMAGE_TAG}"
+
+      - name: Trivy critical vulnerability quality gate
+        run: |
+          trivy image \
+            --scanners vuln \
+            --severity CRITICAL \
+            --exit-code 1 \
+            "auth-service:${IMAGE_TAG}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions-auth-service
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag image for Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          ECR_IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+          docker tag \
+            "auth-service:${IMAGE_TAG}" \
+            "$ECR_IMAGE"
+
+          echo "ECR_IMAGE=$ECR_IMAGE" >> "$GITHUB_ENV"
+
+          echo "ECR image: $ECR_IMAGE"
+
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push "$ECR_IMAGE"
+
+      - name: Docker image summary
+        run: |
+          echo "### Docker image published 🚀" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$ECR_IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
