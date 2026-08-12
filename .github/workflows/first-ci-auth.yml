@@ -269,6 +269,6 @@ jobs:
 
       - name: Docker image summary
         run: |
-          echo "### Docker image published 🚀" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Docker image" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "\`$ECR_IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
