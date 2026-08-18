@@ -1,8 +1,8 @@
 name: Auth Service CI
 
 on:
+  workflow_dispatch:
   pull_request:
-
   push:
     branches:
       - aws-cloud-k8s
@@ -20,15 +20,10 @@ jobs:
     permissions:
       contents: read
       id-token: write
-
       
     with:
       aws-region: ${{ vars.AWS_REGION }}
-
       aws-role-arn: ${{ vars.AWS_ROLE_ARN }}
-
       ecr-repository: ${{ vars.ECR_REPOSITORY }}
-
       image-name: "auth-service"
-
       app-version: ${{ vars.APP_VERSION }}
