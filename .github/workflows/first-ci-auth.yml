@@ -15,7 +15,7 @@ jobs:
   ci:
     name: Auth Service CI
 
-    uses: ramondata/CI-reusable-source/.github/workflows/ci-reusable.yml@v5.0.0
+    uses: ramondata/CI-reusable-source/.github/workflows/ci-reusable.yml@v1.5.0
 
     permissions:
       contents: read
