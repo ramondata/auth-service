@@ -1,8 +1,6 @@
 package main
 
 import (
-	_ "crypto/sha256"
-	_ "encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -68,12 +66,15 @@ func (a *App) createKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CreateKeyRequest
+	log.Println(r.Body)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Println(err)
 		http.Error(w, "Corpo da requisição inválido", http.StatusBadRequest)
 		return
 	}
 
 	if req.Name == "" {
+		log.Println(req.Name)
 		http.Error(w, "O campo 'name' é obrigatório", http.StatusBadRequest)
 		return
 	}
