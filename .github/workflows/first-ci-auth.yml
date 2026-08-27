@@ -15,15 +15,69 @@ jobs:
   ci:
     name: Auth Service CI
 
-    uses: ramondata/CI-reusable-source/.github/workflows/ci-reusable.yml@v1.5.0
+    uses: ramondata/CI-reusable-source/.github/workflows/ci-reusable.yml@v1.6.0
 
     permissions:
       contents: read
       id-token: write
-      
+
     with:
       aws-region: ${{ vars.AWS_REGION }}
       aws-role-arn: ${{ vars.AWS_ROLE_ARN }}
       ecr-repository: ${{ vars.ECR_REPOSITORY }}
       image-name: "auth-service"
       app-version: ${{ vars.APP_VERSION }}
+
+
+  gitops-update:
+    name: Update GitOps Image
+
+    needs:
+      - ci
+
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/aws-cloud-k8s'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v6
+        with:
+          repository: ramondata/toggle-master-gitops
+          ref: master
+          token: ${{ secrets.GITOPS_DEPLOY_KEY }}
+          path: gitops
+
+      - name: Update auth-service image tag
+        env:
+          IMAGE_TAG: ${{ needs.ci.outputs.image-tag }}
+        run: |
+          cd gitops
+
+          sed -i -E \
+            "s|^  tag:.*|  tag: ${IMAGE_TAG}|" \
+            apps/auth-service/values.yaml
+
+          echo "New image tag:"
+          grep -A2 "^image:" apps/auth-service/values.yaml
+
+      - name: Commit GitOps change
+        env:
+          IMAGE_TAG: ${{ needs.ci.outputs.image-tag }}
+        run: |
+          cd gitops
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add apps/auth-service/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No GitOps changes detected"
+            exit 0
+          fi
+
+          git commit -m "chore(auth-service): deploy ${IMAGE_TAG}"
+          git push origin master
