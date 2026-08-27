@@ -47,7 +47,7 @@ jobs:
         with:
           repository: ramondata/toggle-master-gitops
           ref: master
-          token: ${{ secrets.GITOPS_DEPLOY_KEY }}
+          ssh-key: ${{ secrets.GITOPS_DEPLOY_KEY }}
           path: gitops
 
       - name: Update auth-service image tag
