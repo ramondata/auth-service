@@ -22,7 +22,7 @@ type CreateKeyResponse struct {
 // healthHandler é um simples endpoint de verificação de saúde
 func (a *App) healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok ok senhor"}); err != nil {
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
 		log.Printf("Erro ao escrever resposta JSON: %v", err)
 	}
 }
