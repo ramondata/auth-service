@@ -21,21 +21,21 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8001
-        
+
         envFrom:
         - configMapRef:
             name: auth-service-config
-        
+
         env:
         - name: MASTER_KEY
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: master-key
-        
+
         - name: DATABASE_URL
           value: "postgres://auth_user:auth_password@auth-db.cahgwak00ah1.us-east-1.rds.amazonaws.com:5432/auth_db?sslmode=require"
-        
+
         livenessProbe:
           httpGet:
             path: /health
@@ -44,7 +44,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        
+
         readinessProbe:
           httpGet:
             path: /health
@@ -53,7 +53,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 5
           failureThreshold: 2
-        
+
         resources:
           requests:
             cpu: 100m

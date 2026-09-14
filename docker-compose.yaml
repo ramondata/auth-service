@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: meteora_password
     volumes:
       - pgdata:/var/lib/postgresql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql  
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:

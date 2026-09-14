@@ -56,7 +56,7 @@ kubectl apply -f k8s/
 
 ### 2. configmap.yaml
 - **O que é**: Variáveis não-secretas
-- **Vem do Docker Compose**: 
+- **Vem do Docker Compose**:
   ```yaml
   environment:
     PORT: "8001"
