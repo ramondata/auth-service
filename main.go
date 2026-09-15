@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -18,6 +19,11 @@ type App struct {
 }
 
 func main() {
+
+	// ERRO PROPOSITAL PARA TESTAR SAST
+	_ = &tls.Config{
+		InsecureSkipVerify: true,
+	}
 
 	// Carrega o .env para desenvolvimento local. Em produção, isso não fará nada.
 	_ = godotenv.Load()
