@@ -21,7 +21,7 @@ func main() {
 
 	// Carrega o .env para desenvolvimento local. Em produção, isso não fará nada.
 	_ = godotenv.Load()
-	fmt.Println("Importando variáveis de ambiente")
+	fmt.Println("Importando variáveis de ambiente agora")
 
 	// --- Configuração ---
 	port := os.Getenv("PORT")
