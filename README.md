@@ -89,3 +89,58 @@ curl http://localhost:8001/validate \
 ```
 
 Saída esperada: `Chave de API inválida ou inativa`
+
+## CI/CD no AWS Academy
+
+A branch `aws-cloud-k8s` autentica com as credenciais temporárias do laboratório.
+O workflow recebe um único secret, `AWS_ACADEMY_CREDENTIALS`, sem assumir outra
+role via OIDC. As permissões AWS são as da sessão fornecida pelo Academy.
+
+### Configuração inicial
+
+Em **Settings → Secrets and variables → Actions → Secrets**, crie o repository
+secret `AWS_ACADEMY_CREDENTIALS` e cole o bloco de **AWS Details → AWS CLI**:
+
+```ini
+[default]
+aws_access_key_id=COLE_A_ACCESS_KEY_ATUAL
+aws_secret_access_key=COLE_A_SECRET_KEY_ATUAL
+aws_session_token=COLE_O_SESSION_TOKEN_ATUAL
+```
+
+O cabeçalho `[default]` é opcional. Os três valores são obrigatórios.
+Mantenha as credenciais somente no secret, fora de arquivos versionados e de
+inputs de execução do workflow.
+
+Em **Variables**, configure:
+
+| Variável | Valor |
+| --- | --- |
+| `AWS_REGION` | Região do ECR no laboratório, por exemplo `us-east-1` |
+| `ECR_REPOSITORY` | Nome do repositório, por exemplo `toggle-master/auth-service` |
+| `APP_VERSION` | Versão da aplicação, por exemplo `v1.0.0` |
+
+O ECR deve existir nessa região e conta. O secret existente `GITOPS_DEPLOY_KEY`
+continua necessário para atualizar `ramondata/toggle-master-gitops`.
+`AWS_ROLE_ARN` não é usado pelo auth-service no modo Academy.
+
+### Atualização diária
+
+1. Inicie o laboratório e copie as novas credenciais em **AWS Details → AWS CLI**.
+2. Edite somente o valor de `AWS_ACADEMY_CREDENTIALS`, substituindo o bloco inteiro.
+3. Em **Actions → Auth Service CI**, abra a execução mais recente iniciada por
+   **push** na `aws-cloud-k8s` que já contenha esta alteração e selecione
+   **Re-run all jobs**. Reexecutar uma versão antiga mantém o workflow antigo.
+
+Publicações por push na `aws-cloud-k8s` também usam o secret atualizado.
+O fluxo valida a sessão e o ECR, constrói e verifica a imagem e publica no ECR.
+O GitOps recebe tanto o repositório da conta autenticada quanto a nova tag.
+Pull requests executam as verificações de código sem publicar imagens.
+
+O workflow também aceita `workflow_dispatch` na `aws-cloud-k8s`. O botão
+**Run workflow** só aparece quando o arquivo existe na branch padrão (`main`);
+até lá, use a reexecução acima. Alterar o secret não inicia uma execução.
+
+Se ocorrer `ExpiredToken` ou `InvalidClientTokenId`, copie um novo bloco de
+credenciais do laboratório ativo. Se ocorrer `RepositoryNotFoundException`,
+confira a região e a existência do ECR na conta do Academy.
