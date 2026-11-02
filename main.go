@@ -21,6 +21,11 @@ func main() {
 
 	// Carrega o .env para desenvolvimento local. Em produção, isso não fará nada.
 	_ = godotenv.Load()
+	shutdown, err := initTelemetry("auth-service")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer shutdown()
 	fmt.Println("Importando variáveis de ambiente agora")
 
 	// --- Configuração ---
@@ -41,7 +46,7 @@ func main() {
 
 	// --- Conexão com o Banco ---
 	db, err := connectDB(databaseURL)
-	fmt.Printf("Conectando ao banco de dados em %s\n", databaseURL)
+	log.Println("Conectando ao banco de dados")
 	if err != nil {
 		log.Fatalf("Não foi possível conectar ao banco de dados: %v", err)
 	}
@@ -68,7 +73,7 @@ func main() {
 	mux.Handle("/admin/keys", app.masterKeyAuthMiddleware(http.HandlerFunc(app.createKeyHandler)))
 
 	log.Printf("Serviço de Autenticação (Go) rodando na porta %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, observeHTTP(mux)); err != nil {
 		log.Fatal(err)
 	}
 }
