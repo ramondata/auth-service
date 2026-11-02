@@ -22,7 +22,9 @@ func main() {
 	// Carrega o .env para desenvolvimento local. Em produção, isso não fará nada.
 	_ = godotenv.Load()
 	shutdown, err := initTelemetry("auth-service")
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer shutdown()
 	fmt.Println("Importando variáveis de ambiente agora")
 
@@ -90,4 +92,3 @@ func connectDB(databaseURL string) (*sql.DB, error) {
 	log.Println("Conectado ao PostgreSQL com sucesso!")
 	return db, nil
 }
-
